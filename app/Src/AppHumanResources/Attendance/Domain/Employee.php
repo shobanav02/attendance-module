@@ -1,15 +1,18 @@
 <?php
  
-namespace App\Models;
+namespace App\Src\AppHumanResources\Attendance\Domain;
  
 use Illuminate\Database\Eloquent\Model;
  
-class Attendance extends Model
+class Employee extends Model
 {
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'attendance';
+    protected $table = 'employee';
+
+
+    
 }

@@ -1,11 +1,11 @@
 import React from 'react';
-import { UserOutlined ,UploadOutlined } from '@ant-design/icons';
+import { UserOutlined, UploadOutlined } from '@ant-design/icons';
 import { Button, MenuProps } from 'antd';
-import { Breadcrumb, Layout, Menu, theme, Typography, Upload ,message} from 'antd';
+import { Breadcrumb, Layout, Menu, theme, Typography, Upload, message } from 'antd';
 import ProTable, { ProColumns } from "@ant-design/pro-table";
-import ProForm, { ProFormUploadButton } from "@ant-design/pro-form";
-import { useState } from 'react';
-
+import { useState, useEffect } from 'react';
+import axios from 'axios'
+import { getBase64 } from './fileReader';
 const { Header, Content, Sider, Footer } = Layout;
 const { Text } = Typography;
 
@@ -26,39 +26,64 @@ const App = () => {
     const {
         token: { colorBgContainer },
     } = theme.useToken();
-    const [fileList, setFileList] = useState([]);
 
+    const [fileList, setFileList] = useState([]);
+    const [attendanceData, setAttendanceData] = useState([]);
+    const [fileData, setFileData] = useState('');
+
+    useEffect(() => {
+        fetchAttendance();
+    }, [])
+
+    const fetchAttendance = async () => {
+        await axios.get(`http://localhost:8000/api/attendance`).then(({ data }) => {
+            const attendanceArray = data.map((item:any) => {
+                return {
+                    'name': item.employee.name,
+                    'check_in': item.check_in ? item.check_in : 'N/A',
+                    'check_out': item.check_out ? item.check_out : 'N/A',
+                    'workHours': item.workedHours
+                }
+
+
+            });
+
+            setAttendanceData(attendanceArray)
+        })
+    }
     const uploaderProps = {
-        beforeUpload: (file:any) => {
-          const isValidFormat = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.type === "application/vnd.ms-excel";
-          if (!isValidFormat) {
-            message.error("File format should be JPG or PDF")
-          }
-          return isValidFormat || Upload.LIST_IGNORE;
+        beforeUpload: (file: any) => {
+            const isValidFormat = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.type === "application/vnd.ms-excel";
+            if (!isValidFormat) {
+                message.error("File format should be JPG or PDF")
+            }
+            return isValidFormat || Upload.LIST_IGNORE;
         },
         onChange({ file, fileList }) {
-        //   if (file.status !== 'uploading') {
-        //     form.setFieldsValue({upload : fileList});
-        //     setAttachmentList(fileList);
-        //     setfileFormatError(false);
-        //   }
-        //   // for handle error
-        //   if (file.status === 'error') {
-        //     const { uid } = file;
-        //     const index = fileList.findIndex((file: any) => file.uid == uid);
-        //     const newFile = { ...file };
-        //     if (index > -1) {
-        //       newFile.status = 'done';
-        //       newFile.percent = 100;
-        //       delete newFile.error;
-        //       fileList[index] = newFile;
-        //       setAttachmentList([...fileList]);
-        //     }
-        //   }
-        },
-      };
-    
-      
+
+            try {
+                getFile(file.originFileObj);
+
+                const fileDataArray = {
+                    fileName: file.name,
+                    fileSize: file.size,
+                    data: fileData,
+                };
+                axios.post(`http://localhost:8000/api/attendance`, fileDataArray).then(({ data }) => {
+                    message.success('File uploaded');
+                });
+
+            } catch (error) {
+                message.error('Failed to upload');
+            }
+        }
+
+    };
+
+    const getFile = async (file:any) => {
+        const data = await getBase64(file);
+        setFileData(data);
+    }
     const columns: ProColumns<any>[] = [
         {
             title: "Name",
@@ -66,11 +91,11 @@ const App = () => {
         },
         {
             title: "Check In",
-            dataIndex: 'actual_in',
+            dataIndex: 'check_in',
         },
         {
             title: "Check Out",
-            dataIndex: 'actual_out',
+            dataIndex: 'check_out',
         },
         {
             title: "Total Working Hours",
@@ -78,8 +103,9 @@ const App = () => {
         },
 
     ];
-    
+
     return (
+        
         <Layout>
             <Header style={{ backgroundColor: 'lightblue' }}>
                 <div className="logo" />
@@ -114,18 +140,18 @@ const App = () => {
                         <ProTable<any>
                             columns={columns}
                             rowKey="id"
-
+                            dataSource={attendanceData}
                             search={false}
                             pagination={{
                                 showSizeChanger: true,
                             }}
                             toolBarRender={() => [
-                                 <Upload {...uploaderProps} className="upload-btn">
-                                 <Button style={{ borderRadius: 6 }} icon={<UploadOutlined />}>
-                                   Upload Attendance
-                                 </Button>
-                                 
-                               </Upload>
+                                <Upload {...uploaderProps} className="upload-btn">
+                                    <Button style={{ borderRadius: 6 }} icon={<UploadOutlined />}>
+                                        Upload Attendance
+                                    </Button>
+
+                                </Upload>
                             ]}
 
                         />
