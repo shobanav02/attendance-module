@@ -67,7 +67,7 @@ const App = () => {
                 const fileDataArray = {
                     fileName: file.name,
                     fileSize: file.size,
-                    data: fileData,
+                    data: fileData.split(',')[1],
                 };
                 axios.post(`http://localhost:8000/api/attendance`, fileDataArray).then(({ data }) => {
                     message.success('File uploaded');

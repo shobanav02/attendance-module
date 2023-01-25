@@ -13,6 +13,7 @@ class Attendance extends Model
      */
     protected $table = 'attendance';
 
+    protected $fillable = ['date' ,'employee_id' ,'schedule_id' , 'check_in','check_out' , 'workedHours' , 'breakHours'];
 
     public function employee()
      {

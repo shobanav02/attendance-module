@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Src\AppHumanResources\Attendance\Domain\Attendance;
 use Nwidart\Modules\Commands\CommandMakeCommand;
-
+use App\Imports\AttendanceImport;
 
 class AttendanceService
 {
@@ -29,7 +29,12 @@ class AttendanceService
      * 
      */
     public function uploadAttendanceData($data) {
+       $fileData = base64_decode($data['data']);
 
+        Storage::disk('local')->put($data['fileName'],$fileData);
+     
+        Excel::import(new AttendanceImport , $data['fileName']) ;
+    
     }
     
 }
